@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { countTabs, testNeoConnection, validateNeoUrl } from '../src/neo.js';
+import { callNeoTool, countTabs, testNeoConnection, validateNeoUrl } from '../src/neo.js';
 
 test('Neo URL stays on local MCP endpoint', () => {
   assert.equal(validateNeoUrl('http://127.0.0.1:9010/mcp').pathname, '/mcp');
@@ -29,4 +29,16 @@ test('connection test only calls tabs list', async () => {
 test('Neo offline yields bounded failure', async () => {
   const result = await testNeoConnection('http://127.0.0.1:9010/mcp', async () => { throw new Error('private local URL'); });
   assert.deepEqual(result, { status: 'failed', error_code: 'NEO_UNAVAILABLE' });
+});
+
+test('browser call forwards selected tool and returns its response', async () => {
+  const calls = [];
+  const result = await callNeoTool('http://127.0.0.1:9010/mcp', 'tabs', { action: 'list' }, async () => ({
+    listTools: async () => ({ tools: [{ name: 'tabs' }] }),
+    callTool: async (input) => { calls.push(input); return { content: [{ type: 'text', text: 'four tabs' }] }; },
+    close: async () => {},
+  }));
+  assert.deepEqual(calls, [{ name: 'tabs', arguments: { action: 'list' } }]);
+  assert.deepEqual(result, { status: 'completed', result: { isError: false, text: 'four tabs', truncated: false } });
+  assert.deepEqual(await callNeoTool('http://127.0.0.1:9010/mcp', 'run', {}), { status: 'failed', error_code: 'NEO_TOOL_INVALID' });
 });

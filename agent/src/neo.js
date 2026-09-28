@@ -1,6 +1,8 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
+const BROWSER_TOOLS = new Set(['tabs', 'navigate', 'snapshot', 'diff', 'act', 'read', 'grep', 'wait']);
+
 export function validateNeoUrl(value) {
   const url = new URL(value);
   if (url.protocol !== 'http:' || !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) || url.pathname !== '/mcp' || url.username || url.password || url.search || url.hash) {
@@ -43,6 +45,32 @@ export async function testNeoConnection(neoUrl, connect = async (url) => {
   } catch (err) {
     const code = err?.message;
     return { status: 'failed', error_code: ['NEO_URL_INVALID', 'NEO_TABS_UNAVAILABLE', 'NEO_RESPONSE_INVALID'].includes(code) ? code : 'NEO_UNAVAILABLE' };
+  } finally {
+    await client?.close?.().catch(() => {});
+  }
+}
+
+export async function callNeoTool(neoUrl, toolName, args, connect = async (url) => {
+  const client = new Client({ name: 'luminous-neo-agent', version: '0.1.0' });
+  await client.connect(new StreamableHTTPClientTransport(url));
+  return client;
+}) {
+  if (!BROWSER_TOOLS.has(toolName) || !args || typeof args !== 'object' || Array.isArray(args)) {
+    return { status: 'failed', error_code: 'NEO_TOOL_INVALID' };
+  }
+  let client;
+  try {
+    client = await connect(validateNeoUrl(neoUrl));
+    const listed = await client.listTools();
+    if (!listed.tools?.some((tool) => tool.name === toolName)) return { status: 'failed', error_code: 'NEO_TOOL_UNAVAILABLE' };
+    const response = await client.callTool({ name: toolName, arguments: args });
+    const raw = response?.content?.filter((entry) => entry.type === 'text').map((entry) => entry.text).join('\n') ||
+      JSON.stringify(response?.structuredContent ?? {});
+    const bytes = Buffer.from(raw, 'utf8');
+    return { status: 'completed', result: { isError: Boolean(response?.isError),
+      text: bytes.subarray(0, 8_000).toString('utf8'), truncated: bytes.length > 8_000 } };
+  } catch {
+    return { status: 'failed', error_code: 'NEO_UNAVAILABLE' };
   } finally {
     await client?.close?.().catch(() => {});
   }

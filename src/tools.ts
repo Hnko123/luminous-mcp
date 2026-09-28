@@ -43,6 +43,12 @@ const neoTestInput = z.object({
   device_id: z.string().uuid(),
   request_id: requestId,
 }).strict();
+const neoToolInput = z.object({
+  device_id: z.string().uuid(),
+  tool_name: z.enum(["tabs", "navigate", "snapshot", "diff", "act", "read", "grep", "wait"]),
+  arguments: z.record(z.string(), z.unknown()),
+  request_id: requestId,
+}).strict();
 const neoJobInput = z.object({ job_id: z.string().uuid() }).strict();
 
 const SAFE_MESSAGES: Record<string, string> = {
@@ -280,13 +286,28 @@ export function registerLuminousTools(
 
   server.registerTool("get_neo_job", {
     title: "Neo iş durumunu sorgula",
-    description: "Neo bağlantı testinin durumunu ve sınırlı sonucunu döndürür.",
+    description: "Neo bağlantı testinin veya tarayıcı araç çağrısının durumunu ve sınırlı sonucunu döndürür.",
     inputSchema: neoJobInput,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   }, async (input) => {
     if (!hasScope(actor, "devices:jobs:read")) return scopeError();
     try {
       const response = await origin.request<Record<string, unknown>>(`/api/integrations/mcp/worker/neo/jobs/${input.job_id}`);
+      return result(response);
+    } catch (error) { return errorResult(error); }
+  });
+
+  server.registerTool("call_neo_browser_tool", {
+    title: "Neo tarayıcı aracını çalıştır",
+    description: "Seçilen mağaza bilgisayarındaki BrowserOS Neo aracına iş gönderir. İş kimliği döner; sonucu get_neo_job ile oku. Komutu yeniden göndermemek için aynı request_id değerini kullan.",
+    inputSchema: neoToolInput,
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
+  }, async (input) => {
+    if (!hasScope(actor, "devices:jobs:write")) return scopeError();
+    try {
+      const response = await origin.request<Record<string, unknown>>("/api/integrations/mcp/worker/neo/tool-jobs", {
+        method: "POST", body: JSON.stringify({ ...input, request_id: input.request_id ?? randomUUID() }),
+      });
       return result(response);
     } catch (error) { return errorResult(error); }
   });

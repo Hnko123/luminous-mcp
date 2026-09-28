@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
-import { testNeoConnection, validateNeoUrl } from './neo.js';
+import { callNeoTool, testNeoConnection, validateNeoUrl } from './neo.js';
 
 const configDir = path.join(process.env.APPDATA || path.join(os.homedir(), '.config'), 'LuminousNeoAgent');
 const configPath = path.join(configDir, 'config.json');
@@ -58,9 +58,12 @@ async function run() {
     try {
       const { job } = await api(config, token, 'POST', '/api/integrations/mcp/neo/agent/claim');
       if (job) {
-        const result = job.kind === 'neo_connection_test'
-          ? await Promise.race([testNeoConnection(config.neoUrl), delay(90_000).then(() => ({ status: 'failed', error_code: 'NEO_TIMEOUT' }))])
-          : { status: 'failed', error_code: 'UNKNOWN_JOB_TYPE' };
+        const operation = job.kind === 'neo_connection_test'
+          ? testNeoConnection(config.neoUrl)
+          : job.kind === 'neo_tool_call'
+            ? callNeoTool(config.neoUrl, job.toolName, job.arguments)
+            : Promise.resolve({ status: 'failed', error_code: 'UNKNOWN_JOB_TYPE' });
+        const result = await Promise.race([operation, delay(90_000).then(() => ({ status: 'failed', error_code: 'NEO_TIMEOUT' }))]);
         await api(config, token, 'POST', `/api/integrations/mcp/neo/agent/jobs/${encodeURIComponent(job.id)}/complete`, { lease_id: job.leaseId, ...result });
       }
       await delay(job ? 1000 : 10_000);
