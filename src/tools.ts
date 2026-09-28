@@ -39,6 +39,12 @@ const listTasksInput = z.object({
   cursor: z.string().min(1).max(2048).optional(),
 }).strict();
 
+const neoTestInput = z.object({
+  device_id: z.string().uuid(),
+  request_id: requestId,
+}).strict();
+const neoJobInput = z.object({ job_id: z.string().uuid() }).strict();
+
 const SAFE_MESSAGES: Record<string, string> = {
   SCOPE_DENIED: "Bu işlem için Luminous bağlantı izni bulunmuyor.",
   VALIDATION_FAILED: "Gönderilen bilgiler geçerli değil.",
@@ -243,6 +249,47 @@ export function registerLuminousTools(
       }
     },
   );
+
+  server.registerTool("list_neo_devices", {
+    title: "Bağlı Neo cihazları",
+    description: "Kullanıcının erişebildiği mağazalara eşlenmiş BrowserOS Neo cihazlarını listeler.",
+    inputSchema: z.object({}).strict(),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  }, async () => {
+    if (!hasScope(actor, "devices:read")) return scopeError();
+    try {
+      const response = await origin.request<Record<string, unknown>>("/api/integrations/mcp/worker/neo/devices");
+      return result(response);
+    } catch (error) { return errorResult(error); }
+  });
+
+  server.registerTool("test_neo_connection", {
+    title: "Neo bağlantısını test et",
+    description: "Seçilen cihazın Neo araçlarını ve sekme sayısını okuyan zararsız işi kuyruğa koyar. request_id tekrarlarında aynı işi döndürür.",
+    inputSchema: neoTestInput,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  }, async (input) => {
+    if (!hasScope(actor, "devices:jobs:write")) return scopeError();
+    try {
+      const response = await origin.request<Record<string, unknown>>("/api/integrations/mcp/worker/neo/jobs", {
+        method: "POST", body: JSON.stringify({ device_id: input.device_id, request_id: input.request_id ?? randomUUID() }),
+      });
+      return result(response);
+    } catch (error) { return errorResult(error); }
+  });
+
+  server.registerTool("get_neo_job", {
+    title: "Neo iş durumunu sorgula",
+    description: "Neo bağlantı testinin durumunu ve sınırlı sonucunu döndürür.",
+    inputSchema: neoJobInput,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  }, async (input) => {
+    if (!hasScope(actor, "devices:jobs:read")) return scopeError();
+    try {
+      const response = await origin.request<Record<string, unknown>>(`/api/integrations/mcp/worker/neo/jobs/${input.job_id}`);
+      return result(response);
+    } catch (error) { return errorResult(error); }
+  });
 }
 
 export {

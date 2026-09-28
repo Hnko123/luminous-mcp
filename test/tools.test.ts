@@ -67,12 +67,15 @@ async function callTool(name: string, args: Record<string, unknown>, authProps: 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Luminous MCP tools", () => {
-  test("publishes exactly three bounded tools with safe annotations", async () => {
+  test("publishes bounded tools with safe annotations", async () => {
     const tools = await listTools();
     expect(tools.map((tool) => tool.name)).toEqual([
       "create_task",
       "add_order_note",
       "list_my_tasks",
+      "list_neo_devices",
+      "test_neo_connection",
+      "get_neo_job",
     ]);
     expect(tools.some((tool) => /admin|database|sql/i.test(tool.name))).toBe(false);
 

@@ -106,7 +106,7 @@ async function approvalToken(handoffId: string, overrides: Record<string, unknow
     connection_id: "conn-origin-1",
     client_id: "client-1",
     client_name: "Gemini Custom App",
-    scope: "tasks:create tasks:read:self orders:note:append",
+    scope: "tasks:create tasks:read:self orders:note:append devices:read devices:jobs:write devices:jobs:read",
     handoff_id: handoffId,
     ...overrides,
   }, APPROVAL_SECRET, {
@@ -137,7 +137,7 @@ describe("OAuth handoff", () => {
     expect(claims.handoff_id).toBe(started.handoffId);
     expect(claims.client_id).toBe("client-1");
     expect(claims.client_name).toBe("Gemini Custom App");
-    expect(claims.scope).toBe("tasks:create tasks:read:self orders:note:append");
+    expect(claims.scope).toBe("tasks:create tasks:read:self orders:note:append devices:read devices:jobs:write devices:jobs:read");
     expect(JSON.stringify(h.kv.puts[0])).not.toContain("<Gemini");
   });
 
@@ -156,14 +156,14 @@ describe("OAuth handoff", () => {
     expect(h.completed[0]).toMatchObject({
       request: authRequest(),
       userId: "42",
-      scope: ["tasks:create", "tasks:read:self", "orders:note:append", "offline_access"],
+      scope: ["tasks:create", "tasks:read:self", "orders:note:append", "devices:read", "devices:jobs:write", "devices:jobs:read", "offline_access"],
       props: {
         userId: "42",
         email: "user@example.com",
         connectionId: "conn-origin-1",
         clientId: "client-1",
         clientName: "Gemini Custom App",
-        scopes: ["tasks:create", "tasks:read:self", "orders:note:append"],
+        scopes: ["tasks:create", "tasks:read:self", "orders:note:append", "devices:read", "devices:jobs:write", "devices:jobs:read"],
       },
     });
     expect(await h.kv.get(`mcp-handoff:${started.handoffId}`)).toBeNull();

@@ -1,7 +1,7 @@
 # Luminous Remote MCP
 
-Luminous Remote MCP is the vendor-neutral Cloudflare Worker gateway for three
-Luminous operations. Its canonical Streamable HTTP endpoint is:
+Luminous Remote MCP is the Cloudflare Worker gateway for Luminous operations.
+Its canonical Streamable HTTP endpoint is:
 
 `https://mcp.luminousluxurycrafts.com.tr/mcp`
 
@@ -15,6 +15,11 @@ or any other secret into an MCP client configuration.
 - `create_task` previews, confirms, and creates a task assigned to the signed-in user.
 - `add_order_note` finds an accessible order by exact normalized buyer name, then previews, confirms, and appends a note.
 - `list_my_tasks` lists only tasks assigned to the signed-in user.
+- `list_neo_devices` lists the user's connected store devices.
+- `test_neo_connection` queues a read-only BrowserOS Neo connection test for one device.
+- `get_neo_job` reads the test status and bounded result.
+
+The Windows process in [agent/](agent/) is the local side of this same Luminous MCP system. It polls for device-specific jobs and uses Neo's loopback MCP endpoint. No local MCP server or public Neo endpoint is added.
 
 Writes use a short-lived confirmation token and a stable request ID. A preview
 does not modify Luminous. When a buyer name matches multiple accessible orders,

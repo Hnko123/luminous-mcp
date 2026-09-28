@@ -16,6 +16,9 @@ const PILOT_SCOPES = [
   "tasks:create",
   "tasks:read:self",
   "orders:note:append",
+  "devices:read",
+  "devices:jobs:write",
+  "devices:jobs:read",
 ] as const;
 const BASE_SCOPE = "tasks:read:self";
 const ID_PATTERN = /^[A-Za-z0-9._:-]{8,128}$/;
