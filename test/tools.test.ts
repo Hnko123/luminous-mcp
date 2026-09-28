@@ -76,6 +76,7 @@ describe("Luminous MCP tools", () => {
       "list_neo_devices",
       "test_neo_connection",
       "get_neo_job",
+      "call_neo_browser_tool",
     ]);
     expect(tools.some((tool) => /admin|database|sql/i.test(tool.name))).toBe(false);
 
