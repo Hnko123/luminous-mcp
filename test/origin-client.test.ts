@@ -75,10 +75,28 @@ describe("Luminous origin client", () => {
       "/api/integrations/mcp/../admin",
       "/api/users",
       "//attacker.example/api/integrations/mcp/tasks/preview",
+      "/api/integrations/mcp/worker/neo/jobs/not-a-uuid",
+      "/api/integrations/mcp/worker/neo/jobs/123e4567-e89b-12d3-a456-426614174000/complete",
     ]) {
       await expect(client.request(path)).rejects.toMatchObject({ code: "ORIGIN_PATH_DENIED" });
     }
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("allows Neo device, enqueue, and job result routes", async () => {
+    const paths: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (request: Request) => {
+      paths.push(new URL(request.url).pathname);
+      return Response.json({ ok: true });
+    }));
+    const client = createOriginClient(env(), actor);
+    for (const path of [
+      "/api/integrations/mcp/worker/neo/devices",
+      "/api/integrations/mcp/worker/neo/jobs",
+      "/api/integrations/mcp/worker/neo/tool-jobs",
+      "/api/integrations/mcp/worker/neo/jobs/123e4567-e89b-12d3-a456-426614174000",
+    ]) await client.request(path);
+    expect(paths).toHaveLength(4);
   });
 
   test("fails closed on an invalid configured origin", () => {

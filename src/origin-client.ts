@@ -11,7 +11,11 @@ const ALLOWED_PATHS = new Set([
   "/api/integrations/mcp/worker/order-notes/resolve",
   "/api/integrations/mcp/worker/order-notes/preview",
   "/api/integrations/mcp/worker/order-notes/commit",
+  "/api/integrations/mcp/worker/neo/devices",
+  "/api/integrations/mcp/worker/neo/jobs",
+  "/api/integrations/mcp/worker/neo/tool-jobs",
 ]);
+const NEO_JOB_PATH = /^\/api\/integrations\/mcp\/worker\/neo\/jobs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SAFE_CODE = /^[A-Z][A-Z0-9_]{1,63}$/;
 const CORRELATION_ID = /^[A-Za-z0-9._:-]{8,128}$/;
 
@@ -81,7 +85,7 @@ function allowedTarget(path: string, origin: string): URL {
   } catch {
     throw new OriginClientError("ORIGIN_PATH_DENIED", 400);
   }
-  if (target.origin !== origin || !ALLOWED_PATHS.has(target.pathname)) {
+  if (target.origin !== origin || (!ALLOWED_PATHS.has(target.pathname) && !NEO_JOB_PATH.test(target.pathname))) {
     throw new OriginClientError("ORIGIN_PATH_DENIED", 400);
   }
   if (target.search && target.pathname !== "/api/integrations/mcp/worker/tasks/assigned") {
