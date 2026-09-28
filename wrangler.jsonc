@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "luminous-mcp",
+  "account_id": "da9527948b6a7bf12393be9ad3d7fcff",
+  "main": "src/index.ts",
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "mcp.luminousluxurycrafts.com.tr",
+      "custom_domain": true
+    }
+  ],
+  "compatibility_date": "2026-09-26",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "kv_namespaces": [
+    {
+      "binding": "OAUTH_KV",
+      "id": "7ef87e9d95ad4f598ff7f9a570fbc456"
+    }
+  ],
+  "vars": {
+    "LUMINOUS_ORIGIN_URL": "https://luminousluxurycrafts.com.tr",
+    "LUMINOUS_AUTHORIZATION_URL": "https://luminousluxurycrafts.com.tr/#mcp-authorize",
+    "MCP_PUBLIC_URL": "https://mcp.luminousluxurycrafts.com.tr/mcp"
+  }
+}
