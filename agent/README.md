@@ -4,12 +4,33 @@ This user-level agent polls Luminous for jobs assigned to its device. It connect
 
 ## Install
 
-1. Open BrowserOS Neo. The installer checks for Node.js 22 or newer and installs Node.js LTS with `winget` when needed. If `winget` is unavailable, install Node.js LTS manually first.
-2. In Luminous Profile, create a device for the store and copy the one-time token.
-3. In Neo's MCP connection screen, copy its local `/mcp` URL.
-4. Download this repository, then run `powershell -ExecutionPolicy Bypass -File .\agent\install.ps1` from its root.
+Use the same Windows account that runs BrowserOS Neo. On a new computer with `winget` but no Git, open PowerShell and install Git:
 
-The installer asks for the Luminous HTTPS origin, Neo URL, and device token. It stores the token encrypted with Windows DPAPI for the current user, installs an at-logon task, and starts it. Keep the copied token private. Revoking the device in Luminous prevents further claims.
+```powershell
+winget install --id Git.Git -e --source winget --accept-package-agreements --accept-source-agreements
+```
+
+Close PowerShell and open it again so Git is on `PATH`. Then download the agent:
+
+```powershell
+git --version
+cd $env:USERPROFILE
+git clone https://github.com/Hnko123/luminous-mcp.git
+cd .\luminous-mcp
+```
+
+1. Open BrowserOS Neo on this computer. In Neo's MCP connection screen, copy its local `/mcp` URL (usually `http://127.0.0.1:9010/mcp`).
+2. Sign in to Luminous as the user assigned to this computer. In **Profile → Neo mağaza cihazları**, create a device for the exact shop name and copy the one-time token. For Mustafa's Genie computer, use shop `GenieWishPendants` and label `Genie bilgisayarı`.
+3. From the downloaded repository root, run:
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\agent\install.ps1
+   ```
+
+4. When prompted, enter the Luminous URL (`https://luminousluxurycrafts.com.tr`), the local Neo MCP URL, and the one-time device token. The installer checks for Node.js 22 or newer and installs Node.js LTS with `winget` when needed. If Node.js was just installed but is not found, open a new PowerShell window and rerun the installer.
+5. In Luminous Profile, click **Bağlantıyı test et** for the new device and check that the test completes.
+
+The installer stores the token encrypted with Windows DPAPI for the current user, installs an at-logon task, and starts it. Keep the token on this computer; do not paste it into chat, tickets, or logs. Revoking the device in Luminous prevents further claims.
 
 To run interactively after setup: `cd agent; npm start -- run`. To stop automatic starts, remove the Windows scheduled task `Luminous Neo Agent`.
 
