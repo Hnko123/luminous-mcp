@@ -4,7 +4,7 @@ This user-level agent polls Luminous for jobs assigned to its device. It connect
 
 ## Install
 
-1. Install Node.js 22 or newer and open BrowserOS Neo.
+1. Open BrowserOS Neo. The installer checks for Node.js 22 or newer and installs Node.js LTS with `winget` when needed. If `winget` is unavailable, install Node.js LTS manually first.
 2. In Luminous Profile, create a device for the store and copy the one-time token.
 3. In Neo's MCP connection screen, copy its local `/mcp` URL.
 4. Download this repository, then run `powershell -ExecutionPolicy Bypass -File .\agent\install.ps1` from its root.
